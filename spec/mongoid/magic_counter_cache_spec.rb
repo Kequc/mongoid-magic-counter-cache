@@ -190,19 +190,19 @@ module Mongoid
         end
 
         it "should have 1 feeling in counter" do
-         person.all_my_feels.should == person.feelings.size
+         person.all_my_feels_count.should == person.feelings.size
         end
 
         it "sets the counter cache equal to the relation count on addition" do
           5.times do |n|
             person.feelings.create
-            person.feelings.size.should == person.all_my_feels
+            person.feelings.size.should == person.all_my_feels_count
           end
         end
         it "decreases the counter cache when records are deleted" do
           person.feelings.push( feeling )
           feeling.destroy
-          person.all_my_feels.should == person.feelings.size
+          person.all_my_feels_count.should == person.feelings.size
         end
       end
     end

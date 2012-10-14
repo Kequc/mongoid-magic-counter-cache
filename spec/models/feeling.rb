@@ -3,5 +3,5 @@ class Feeling
   include Mongoid::MagicCounterCache
 
   belongs_to :person
-  counter_cache :person, :field => "all_my_feels"
+  counter_cache :person, :using => "all_my_feels"
 end

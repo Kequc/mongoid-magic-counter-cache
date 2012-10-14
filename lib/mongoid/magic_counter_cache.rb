@@ -8,6 +8,7 @@ module Mongoid #:nodoc:
   #
   #      field :name
   #      field :feeling_count
+  #      field :last_feeling_at
   #      has_many :feelings
   #    end
   #
@@ -26,7 +27,8 @@ module Mongoid #:nodoc:
   #      include Mongoid::Document
   #
   #      field :name
-  #      field :all_my_feels
+  #      field :all_my_feels_count
+  #      field :last_all_my_feels_at
   #      has_many :feelings
   #    end
   #
@@ -36,7 +38,7 @@ module Mongoid #:nodoc:
   #
   #      field :name
   #      belongs_to    :person
-  #      counter_cache :person, :field => "all_my_feels"
+  #      counter_cache :person, :using => "all_my_feels"
   #    end
   module MagicCounterCache
     extend ActiveSupport::Concern
@@ -46,20 +48,23 @@ module Mongoid #:nodoc:
       def counter_cache(*args, &block)
         options = args.extract_options!
         name    = options[:class] || args.first.to_s
+        modulus = options[:using] ? options[:using].to_s : model_name.demodulize.underscore
+        counter_name = "#{modulus}_count"
+        last_at_name = "last_#{modulus}_at"
 
-        if options[:field]
-          counter_name = "#{options[:field].to_s}"
-        else
-          counter_name = "#{model_name.demodulize.underscore}_count"
-        end
         after_create  do |doc|
           if doc.embedded?
             parent = doc._parent
             parent.inc(counter_name.to_sym, 1) if parent.respond_to? counter_name
           else
             relation = doc.send(name)
-            if relation && relation.class.fields.keys.include?(counter_name)
-              relation.inc(counter_name.to_sym,  1)
+            if relation and field_keys = relation.class.fields.keys
+              if field_keys.include?(counter_name)
+                relation.inc(counter_name.to_sym, 1)
+              end
+              if field_keys.include?(last_at_name)
+                relation.touch(last_at_name.to_sym)
+              end
             end
           end
         end
@@ -70,7 +75,7 @@ module Mongoid #:nodoc:
             parent.inc(counter_name.to_sym, -1) if parent.respond_to? counter_name
           else
             relation = doc.send(name)
-            if relation && relation.class.fields.keys.include?(counter_name)
+            if relation and relation.class.fields.keys.include?(counter_name)
               relation.inc(counter_name.to_sym, -1)
             end
           end

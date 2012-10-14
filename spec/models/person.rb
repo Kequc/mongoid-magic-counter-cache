@@ -3,5 +3,5 @@ class Person
   has_many :feelings
 
   field :name
-  field :all_my_feels
+  field :all_my_feels_count
 end
